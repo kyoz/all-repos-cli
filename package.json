@@ -24,7 +24,14 @@
     "plugin",
     "node",
     "module",
-    "node_module"
+    "node_module",
+    "github",
+    "repos",
+    "repositories",
+    "github repos",
+    "github repositories",
+    "all github repos",
+    "all github repositories"
   ],
   "dependencies": {
     "all-repos": "^0.1.1",
