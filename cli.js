@@ -2,6 +2,7 @@
 
 'use strict';
 
+const fs = require('fs');
 const meow = require('meow');
 const userRepos = require('all-repos');
 const npmCurrentUser = require('npm-current-user');
@@ -14,45 +15,115 @@ const Fuse = require('fuse.js');
 
 const cli = meow(`
   Usage
-    # Get github repositories of current logged npm user
-    $ all-repos
-    # Get github repositories by github username 
-    $ all-repos <username> 
-`);
+    $ repos
+    $ repos <github-username>
+  Options
+    --update, --u           Update repositories data to latest
+    --updateUser, --uu      Update default user (Since 'npm whoami' is quite slow)
+  Examples
+    $ repos                 Get local repositories of current user
+    $ repos banminkyoz      Get local repositories of 'banminkyoz'
+    $ repos --u             Update repositories of current user to latest
+    $ repos --u banminkyoz  Update repositories of 'banminkyoz' to latest
+    $ repos --uu            Update npm current logged user
+`, {
+  flags: {
+    updateUser: {
+      type: 'boolean',
+      alias: 'uu'
+    },
+    update: {
+      type: 'boolean',
+      alias: 'u'
+    }
+  }
+});
 
 console.clear();
 const spinner = ora(`Getting ${cli.input.length > 0 ? cli.input + '\'s' : 'your'} github repos infomation...`).start();
 let repos = [];
+let isNotUpdate = true;
+let prompTitle = 'Type to search repos: ';
 
 spinner.color = 'blue';
 
+if (!fs.existsSync(`${__dirname}/data`)) {
+  fs.mkdirSync(`${__dirname}/data`);
+}
+
 getGithubUsername().then(githubUsername => {
+  const dataPath = `${__dirname}/data/${githubUsername}.json`;
+
+  if (isNotUpdate && fs.existsSync(dataPath)) {
+    repos = formatRepos(require(dataPath));
+    prompTitle = 'Type to search repos: (local): ';
+    initPrompt('');
+    return;
+  }
+
+  prompTitle = 'Type to search repos: (up-to-date): ';
   userRepos(githubUsername).then(_repos => {
     repos = formatRepos(_repos);
-    spinner.stop();
-    console.log('');
 
-    inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
-    inquirer.prompt([{
-      type: 'autocomplete',
-      name: 'from',
-      message: 'Type to search repos: ',
-      source: searchRepos
-    }]).then(answers => {
-      opn(answers.from.url, {wait: false});
-      console.clear();
+    // Save data
+    fs.writeFile(dataPath, JSON.stringify(_repos), err => {
+      if (err) {
+        console.error(err);
+      }
     });
+
+    initPrompt();
   });
 });
 
+function initPrompt() {
+  spinner.stop();
+  console.log('');
+  inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
+  inquirer.prompt([{
+    type: 'autocomplete',
+    name: 'from',
+    message: prompTitle,
+    source: searchRepos
+  }]).then(answers => {
+    opn(answers.from.url, {wait: false});
+    console.clear();
+  });
+}
+
 function getGithubUsername() {
   return new Promise(resolve => {
+    if (cli.flags.u) {
+      isNotUpdate = false;
+      if (cli.flags.u !== true) {
+        resolve(cli.flags.u);
+      }
+    }
+
+    if (cli.flags.update) {
+      isNotUpdate = false;
+      if (cli.flags.update !== true) {
+        resolve(cli.flags.update);
+      }
+    }
+
     if (cli.input.length > 0) {
       resolve(cli.input);
-    } else {
+    }
+
+    const dataPath = `${__dirname}/data/current_user.json`;
+    if (cli.flags.uu || cli.flags.updateUser || !fs.existsSync(dataPath)) {
       npmCurrentUser().then(info => {
+        fs.writeFile(dataPath, JSON.stringify({name: `${info.github}`}), err => {
+          if (err) {
+            console.error(err);
+          }
+        });
         resolve(info && info.github ? info.github : null);
       });
+    } else {
+      const githubUser = require(dataPath);
+      resolve(githubUser.name);
     }
   });
 }
