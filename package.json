@@ -1,6 +1,6 @@
 {
   "name": "all-repos-cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Useful CLI to get github repositories",
   "author": {
     "name": "Kyoz",
