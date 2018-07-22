@@ -1,0 +1,48 @@
+{
+  "name": "all-repos-cli",
+  "version": "0.0.0",
+  "description": "Useful CLI to get github repositories",
+  "author": {
+    "name": "Kyoz",
+    "email": "banminkyoz@gmail.com"
+  },
+  "repository": "banminkyoz/all-repos-cli",
+  "license": "MIT",
+  "engines": {
+    "node": ">=6"
+  },
+  "bin": {
+    "repos": "cli.js"
+  },
+  "files": [
+    "cli.js"
+  ],
+  "scripts": {
+    "test": "xo && ava --verbose"
+  },
+  "keywords": [
+    "plugin",
+    "node",
+    "module",
+    "node_module"
+  ],
+  "dependencies": {
+    "all-repos": "^0.1.1",
+    "columnify": "^1.5.4",
+    "fuse.js": "^3.2.1",
+    "inquirer": "^6.0.0",
+    "inquirer-autocomplete-prompt": "^0.12.2",
+    "meow": "^5.0.0",
+    "npm-current-user": "^0.1.2",
+    "opn": "^5.3.0",
+    "ora": "^3.0.0",
+    "term-size": "^1.2.0"
+  },
+  "devDependencies": {
+    "ava": "^0.25.0",
+    "xo": "^0.21.1"
+  },
+  "xo": {
+    "space": 2
+  }
+}
