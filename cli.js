@@ -12,6 +12,12 @@ const columnify = require('columnify');
 const termSize = require('term-size');
 const opn = require('opn');
 const Fuse = require('fuse.js');
+const rimraf = require('rimraf');
+
+let repos = [];
+let isNotUpdate = true;
+let prompTitle = 'Type to search repos: ';
+let spinner;
 
 const cli = meow(`
   Usage
@@ -20,61 +26,75 @@ const cli = meow(`
   Options
     --update, --u           Update repositories data to latest
     --updateUser, --uu      Update default user (Since 'npm whoami' is quite slow)
+    --clearCache, --cc      Clear local cache
   Examples
     $ repos                 Get local repositories of current user
     $ repos banminkyoz      Get local repositories of 'banminkyoz'
     $ repos --u             Update repositories of current user to latest
     $ repos --u banminkyoz  Update repositories of 'banminkyoz' to latest
     $ repos --uu            Update npm current logged user
+    $ repos --cc            Clear all local cache
 `, {
   flags: {
+    update: {
+      type: 'boolean',
+      alias: 'u'
+    },
     updateUser: {
       type: 'boolean',
       alias: 'uu'
     },
-    update: {
+    clearCache: {
       type: 'boolean',
-      alias: 'u'
+      alias: 'cc'
     }
   }
 });
 
-console.clear();
-const spinner = ora(`Getting ${cli.input.length > 0 ? cli.input + '\'s' : 'your'} github repos infomation...`).start();
-let repos = [];
-let isNotUpdate = true;
-let prompTitle = 'Type to search repos: ';
-
-spinner.color = 'blue';
-
-if (!fs.existsSync(`${__dirname}/data`)) {
-  fs.mkdirSync(`${__dirname}/data`);
+if (cli.flags.clearCache || cli.flags.cc) {
+  rimraf(`${__dirname}/data/`, () => {
+    console.log(`Cleared cache !`);
+  });
+} else {
+  startCLI();
 }
 
-getGithubUsername().then(githubUsername => {
-  const dataPath = `${__dirname}/data/${githubUsername}.json`;
+function startCLI() {
+  // Start
+  console.clear();
+  spinner = ora(`Getting ${cli.input.length > 0 ? cli.input + '\'s' : 'your'} github repos infomation...`).start();
 
-  if (isNotUpdate && fs.existsSync(dataPath)) {
-    repos = formatRepos(require(dataPath));
-    prompTitle = 'Type to search repos: (local): ';
-    initPrompt('');
-    return;
+  spinner.color = 'blue';
+
+  if (!fs.existsSync(`${__dirname}/data`)) {
+    fs.mkdirSync(`${__dirname}/data`);
   }
 
-  prompTitle = 'Type to search repos: (up-to-date): ';
-  userRepos(githubUsername).then(_repos => {
-    repos = formatRepos(_repos);
+  getGithubUsername().then(githubUsername => {
+    const dataPath = `${__dirname}/data/${githubUsername}.json`;
 
-    // Save data
-    fs.writeFile(dataPath, JSON.stringify(_repos), err => {
-      if (err) {
-        console.error(err);
-      }
+    if (isNotUpdate && fs.existsSync(dataPath)) {
+      repos = formatRepos(require(dataPath));
+      prompTitle = 'Type to search repos: (local): ';
+      initPrompt('');
+      return;
+    }
+
+    prompTitle = 'Type to search repos: (up-to-date): ';
+    userRepos(githubUsername).then(_repos => {
+      repos = formatRepos(_repos);
+
+      // Save data
+      fs.writeFile(dataPath, JSON.stringify(_repos), err => {
+        if (err) {
+          console.error(err);
+        }
+      });
+
+      initPrompt();
     });
-
-    initPrompt();
   });
-});
+}
 
 function initPrompt() {
   spinner.stop();

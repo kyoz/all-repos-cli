@@ -30,12 +30,14 @@ $ repos --help
   Options
     --update, --u           Update repositories data to latest
     --updateUser, --uu      Update default user (Since 'npm whoami' is quite slow)
+    --clearCache, --cc      Clear local cache
   Examples
     $ repos                 Get local repositories of current user
     $ repos banminkyoz      Get local repositories of 'banminkyoz'
     $ repos --u             Update repositories of current user to latest
     $ repos --u banminkyoz  Update repositories of 'banminkyoz' to latest
     $ repos --uu            Update npm current logged user
+    $ repos --cc            Clear all local cache
 ```
 
 ## Related
