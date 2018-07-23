@@ -165,11 +165,13 @@ function formatRepos(repos) {
   const descriptionSize = termimalSize.columns - nameSize - forkSize - starSize - 10;
 
   for (const repo of repos) {
+    const description = repo.description ? repo.description.length <= descriptionSize ?
+      repo.description : repo.description.slice(0, descriptionSize - 3) + '...' : '';
+
     results.push({
       name: columnify([{
         name: repo.name,
-        description: repo.description ? repo.description.length <= descriptionSize ?
-          repo.description : repo.description.slice(0, descriptionSize - 3) + '...' : '',
+        description: description.replace(/[^ -~]+/g, ''),
         forked: repo.forkFrom ? '(Fork)' : '',
         star: repo.stars + ' ⭐️'
       }], {
